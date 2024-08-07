@@ -22,13 +22,35 @@ def clear_session():
 
 @app.route('/articles')
 def index_articles():
+    #GET /articles
+    articles = Article.query.all()
 
-    pass
+    response_body = [article.to_dict() for article in articles]
+
+    return jsonify(response_body), 200
 
 @app.route('/articles/<int:id>')
 def show_article(id):
+    #each user can see maximum of 3 articles before seeing the paywall.
+    #when a user makes a get request to /articles/<int:id>,
+    # increment the session['page_views'] by 1.
+    session['page_views'] = session.get('page_views', 0) + 1
 
-    pass
+    article = Article.query.get_or_404(id)
+
+    if session['page_views'] <= 3:
+        return jsonify(article.to_dict()), 200
+    else:
+        return jsonify({'message': 'Maximum pageview limit reached'}), 401
+
+    #if this is the first request, set session['page_views'] to an initial value of 0.(ternary)
+    #for every request, increment value by 1.
+    # If the user has viewed 3 or fewer pages, render a JSON response with the article data
+    # If the user has viewed more than 3 pages, render a JSON response including an error message {'message': 'Maximum pageview limit reached'}, and a status code of 401 unauthorized
+
+    # An API endpoint at /clear is available to clear your session as needed.
+    
+
 
 if __name__ == '__main__':
     app.run(port=5555)
